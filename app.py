@@ -1,108 +1,103 @@
 import streamlit as st
-import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
+from google import genai
 
-# --- إعدادات الصفحة ---
-st.set_page_config(page_title="نقّاد - Naqqad", page_icon="🎯", layout="centered")
+# إعدادات صفحة Streamlit
+st.set_page_config(
+    page_title="نقّاد - Naqqad",
+    page_icon="🎯",
+    layout="centered"
+)
 
-# --- تصميم الخلفية والتنسيقات (CSS) ---
+# تخصيص التصميم الداكن للواجهة
 st.markdown("""
     <style>
-    /* خلفية متدرجة وأنيقة للموقع */
     .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-        color: #f8fafc;
+        background-color: #121620;
+        color: #ffffff;
     }
-    
-    /* تنسيق العنوان الرئيسي */
     .main-title {
         text-align: center;
-        font-size: 2.8rem;
-        font-weight: 800;
-        color: #38bdf8;
-        margin-bottom: 0.2rem;
+        font-size: 2.3rem;
+        font-weight: bold;
+        color: #ffffff;
     }
-    
     .sub-title {
         text-align: center;
-        font-size: 1.2rem;
+        font-size: 1.05rem;
         color: #94a3b8;
-        margin-bottom: 2rem;
+        margin-bottom: 25px;
     }
-
-    /* تحسين شكل مربع النص */
     .stTextArea textarea {
-        background-color: #1e293b !important;
-        color: #f8fafc !important;
-        border: 1px solid #334155 !important;
-        border-radius: 12px !important;
-        font-size: 1.05rem !important;
-    }
-    .stTextArea textarea:focus {
-        border-color: #38bdf8 !important;
-        box-shadow: 0 0 10px rgba(56, 189, 248, 0.3) !important;
-    }
-
-    /* تحسين زر الفحص */
-    .stButton>button {
-        width: 100%;
-        background: linear-gradient(90deg, #0284c7 0%, #2563eb 100%);
-        color: white;
-        font-size: 1.1rem;
-        font-weight: bold;
-        border: none;
-        border-radius: 10px;
-        padding: 0.6rem 1rem;
-        transition: all 0.3s ease;
-    }
-    .stButton>button:hover {
-        background: linear-gradient(90deg, #0369a1 0%, #1d4ed8 100%);
-        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+        background-color: #1e2535 !important;
+        color: #ffffff !important;
+        border: 1px solid #2d3748 !important;
+        border-radius: 8px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- بيانات التدريب النموذجية ---
-data = {
-    'text': [
-        "مبروك لقد ربحت معنا سيارة سجل بياناتك الآن لاستلام الجائزة",
-        "عزيزي العميل تم تجميد حسابك البنكي الرجاء تحديث البيانات فوراً عبر الرابط",
-        "احصل على تمويل شخصي بدون كفيل وبإجراءات سريعة تواصل معنا",
-        "تم إرسال طلبك رقم 4092 مع مندوب التوصيل وسيتواصل معك قريباً",
-        "عزيزي الطالب نود إحاطتك علماً بأن موعد الاختبارات النهائية سيبدأ الأحد القادم",
-        "تذكير لديك موعد في العيادة غداً الساعة 10 صباحاً"
-    ],
-    'label': ['phishing', 'phishing', 'phishing', 'legitimate', 'legitimate', 'legitimate']
-}
+# ترويسة التطبيق والشعار
+st.markdown('<p class="main-title">🎯 نقّاد - Naqqad</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">المنصة الذكية الشاملة لكشف الشائعات والأخبار المضللة ورسائل الاحتيال</p>', unsafe_allow_html=True)
 
-df = pd.DataFrame(data)
+# تهيئة العميل باستخدام المفتاح
+ #  نقرأه بأمان من أسرار المنصة
+GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+client = genai.Client(api_key=GEMINI_API_KEY)
 
-# --- تدريب النموذج ---
-vectorizer = TfidfVectorizer()
-X = vectorizer.fit_transform(df['text'])
-y = df['label']
+# القائمة الجانبية للاختيار بين الأقسام
+st.sidebar.markdown("### 🧭 أقسام منصة نقّاد")
+app_mode = st.sidebar.selectbox(
+    "اختر خدمة الفحص:",
+    ["📰 فحص الشائعات والأخبار", "🚨 كشف الرسائل الاحتيالية"]
+)
 
-model = MultinomialNB()
-model.fit(X, y)
+st.sidebar.markdown("---")
+st.sidebar.info("💡 منصة نقّاد تستخدم تقنيات الذكاء الاصطناعي المتقدمة لتحليل النصوص ومحاربة المحتوى المضلل.")
 
-# --- واجهة المستخدم ---
-st.markdown('<h1 class="main-title">🎯 نقّاد - Naqqad</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">نظام ذكي لكشف الرسائل الاحتيالية بأساليبها المحلية</p>', unsafe_allow_html=True)
-
-user_input = st.text_area("ضع نص الرسالة أو البريد الإلكتروني المشكوك فيه أدناه لفحصه:", height=120, placeholder="أدخل نص الرسالة هنا...")
-
-if st.button("🔍 فحص الرسالة الآن"):
-    if user_input.strip() == "":
-        st.warning("يرجى إدخال نص الرسالة أولاً!")
-    else:
-        text_vec = vectorizer.transform([user_input])
-        prediction = model.predict(text_vec)[0]
-        proba = model.predict_proba(text_vec)[0]
-        confidence = max(proba) * 100
-        
-        st.markdown("---")
-        if prediction == 'phishing':
-            st.error(f"🚨 **تنبيه: الرسالة قد تكون احتيالية!** (نسبة الثقة: {confidence:.1f}%)")
+# --- القسم الأول: فحص الشائعات والأخبار المضللة ---
+if app_mode == "📰 فحص الشائعات والأخبار":
+    st.markdown("### 📰 فحص وتحليل الشائعات والأخبار")
+    st.markdown("ضع الخبر أو النص المراد التحقق من مصداقيته أدناه:")
+    
+    rumor_input = st.text_area("نص الخبر المشكوك فيه:", placeholder="...أدخل نص الخبر أو الإعلان هنا", key="rumor_box")
+    
+    if st.button("فحص الخبر والتحقق منه 🔍"):
+        if rumor_input.strip():
+            with st.spinner("جاري الفحص السريع..."):
+                try:
+                    response = client.models.generate_content(
+                        model='gemini-3.8-flash',
+                        contents=f"أنت محلل في منصة 'نقّاد'. حلل النص باختصار شديد ومباشر (التصنيف: صحيح أو شائعة، ثم أسباب موجزة جداً):\n\n{rumor_input}"
+                    )
+                    st.success("تم التحليل بنجاح!")
+                    st.markdown("### 📊 نتيجة التحليل:")
+                    st.write(response.text)
+                except Exception as e:
+                    st.error(f"حدث خطأ مؤقت: يرجى المحاولة مرة أخرى.")
         else:
-            st.success(f"✅ **الرسالة آمنة** (نسبة الثقة: {confidence:.1f}%)")
+            st.warning("الرجاء إدخال نص الخبر أولاً.")
+
+# --- القسم الثاني: كشف الرسائل الاحتيالية ---
+elif app_mode == "🚨 كشف الرسائل الاحتيالية":
+    st.markdown("### 🚨 كشف الرسائل الاحتيالية والروابط المشبوهة")
+    st.markdown("ضع نص الرسالة النصية أو البريد الإلكتروني الاحتيالي المفترض أدناه:")
+    
+    fraud_input = st.text_area("نص الرسالة المشبوهة:", placeholder="...أدخل نص الرسالة أو العرض الوهمي هنا", key="fraud_box")
+    
+    if st.button("فحص الرسالة الاحتيالية 🛡️"):
+        if fraud_input.strip():
+            with st.spinner("جاري الفحص السريع..."):
+                try:
+                    # تم تبسيط تمرير النص لضمان عدم حدوث أي خطأ في الترميز
+                    response = client.models.generate_content(
+                        model='gemini-3.8-flash',
+                        contents=f"أنت خبير أمن في منصة 'نقّاد'. حلل الرسالة التالية باختصار شديد ومباشر (التصنيف: آمنة أو احتيالية، مع الأسباب باختصار):\n\n{fraud_input}"
+                    )
+                    st.success("تم الفحص بنجاح!")
+                    st.markdown("### 📊 نتيجة تحليل الاحتيال:")
+                    st.write(response.text)
+                except Exception as e:
+                    st.error(f"حدث خطأ مؤقت: يرجى المحاولة مرة أخرى.")
+        else:
+            st.warning("الرجاء إدخال نص الرسالة أولاً.")
